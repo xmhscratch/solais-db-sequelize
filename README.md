@@ -1,0 +1,1 @@
+# solais-db-sequelize
