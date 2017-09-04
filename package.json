@@ -1,0 +1,24 @@
+{
+  "name": "solais-orm",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xmhscratch/solais-orm.git"
+  },
+  "author": "xmhscratch",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/xmhscratch/solais-orm/issues"
+  },
+  "homepage": "https://github.com/xmhscratch/solais-orm#readme",
+  "dependencies": {
+    "lru-cache": "^4.1.1",
+    "mysql2": "^1.4.2",
+    "sequelize": "^4.8.0"
+  }
+}
