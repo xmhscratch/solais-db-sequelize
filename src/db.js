@@ -6,13 +6,27 @@ class Db extends LRU {
         return require('sequelize')
     }
 
-    constructor() {
-        super()
+    static connect(dbname = 'tests', username = 'root', password = '', options = {}) {
+        return {
+            load: (dirPath, isRecursion) => {
+                const db = new Db()
+                    .createConnection(dbname, username, password, options)
+                    .then(() => {
+                        return db.import(dirPath, isRecursion)
+                    })
+
+                return db
+            }
+        }
     }
 
-    connect(dbname = 'tests', username = 'root', password = '', options = {}) {
+    createConnection(dbname = 'tests', username = 'root', password = '', options = {}) {
+        if (this.isConnected()) {
+            return this.getConnection().authenticate()
+        }
+
         const connection = new Db.Sequelize(
-            dbname || config('database.name'),
+            _.isUndefined(dbname) ? config('database.name') : dbname,
             username || config('database.username', 'root'),
             password || config('database.password', ''),
             // sequelize options
@@ -40,7 +54,7 @@ class Db extends LRU {
         return connection
             .authenticate()
             .then(() => {
-                this.connection = connection
+                this._connection = connection
                 config('dispatcher.onConnectionEstablish', _.noop)(connection)
             })
             .catch((error) => {
@@ -48,20 +62,8 @@ class Db extends LRU {
             })
     }
 
-    disconnect() {
-        if (this.isConnected()) {
-            return this.connection.close()
-        }
-        return false
-    }
-
-    isConnected() {
-        const { connection } = this
-        return connection ? true : false
-    }
-
     import(dirPath, isRecursion = false) {
-        const { connection } = this
+        const connection = this.getConnection()
 
         return Promise.promisify((dirPath, done) => async.map(
             fs(dirPath).getItems(
@@ -77,10 +79,13 @@ class Db extends LRU {
 
                         this.set(model.name, model)
                         this[model.name] = this.peek(model.name)
+
                         return callback(null, model)
                     })
             }, (error, results) => {
                 _.forEach(results, (model) => {
+                    if (!model) return
+
                     if (this[model.name].options.hasOwnProperty('associate')) {
                         this[model.name].options.associate(results)
                     }
@@ -91,8 +96,23 @@ class Db extends LRU {
         ))(dirPath)
     }
 
+    getConnection() {
+        return this._connection
+    }
+
+    disconnect() {
+        if (this.isConnected()) {
+            return this.getConnection().close()
+        }
+        return false
+    }
+
+    isConnected() {
+        return this.getConnection() ? true : false
+    }
+
     addSchema(name, defineFunc) {
-        const { connection } = this
+        const connection = this.getConnection()
 
         const model = connection.import(
             name, defineFunc

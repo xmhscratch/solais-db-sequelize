@@ -12,6 +12,10 @@ class Orm extends System.Module {
         return require('./db')
     }
 
+    static get Tenancy() {
+        return require('./tenancy')
+    }
+
     constructor() {
         super()
     }
