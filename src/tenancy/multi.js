@@ -8,15 +8,16 @@ class MultiTenancy {
         return this._tables || {}
     }
 
-    constructor(groupName) {
+    constructor() {
         this._initialized = false
-        this.groupName = groupName
         this._members = LRU()
 
         return this
     }
 
-    initialize() {
+    initialize(groupName) {
+        this.groupName = groupName
+
         return this
             .getGroup()
             .then((group) => {
