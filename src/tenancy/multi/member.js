@@ -2,12 +2,16 @@ const DbTable = require('./db-table')
 
 class Member extends DbTable {
 
+    static getTableName(tenantId, groupName) {
+        return `${groupName}_${tenantId}`
+    }
+
     get tables() {
         return this.getDb()
     }
 
     constructor(tenantId, groupName) {
-        const tableName = `${groupName}_${tenantId}`
+        const tableName = Member.getTableName(tenantId, groupName)
 
         super(tableName)
 
@@ -16,11 +20,16 @@ class Member extends DbTable {
         this.groupName = groupName
 
         return this
+            .ensure()
+            .thenReturn(this)
+    }
+
+    getId() {
+        return this.tenantId
     }
 
     getDb() {
         const { tableName } = this
-        const { tenantId, groupName } = this
 
         return Db
             .connect(tableName)

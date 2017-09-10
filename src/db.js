@@ -1,6 +1,6 @@
 const LRU = require('lru-cache')
 
-class Db extends LRU {
+class Db {
 
     static get Sequelize() {
         return require('sequelize')
@@ -10,19 +10,28 @@ class Db extends LRU {
         return {
             load: (dirPath, isRecursion) => {
                 const db = new Db()
-                    .createConnection(dbname, username, password, options)
-                    .then(() => {
+
+                return db.createConnection(dbname, username, password, options)
+                    .then((connection) => {
                         return db.import(dirPath, isRecursion)
                     })
-
-                return db
+                    .thenReturn(db)
             }
         }
     }
 
+    get Tables() {
+        return this._tables || {}
+    }
+
+    constructor() {
+        this._tables = {}
+        return this
+    }
+
     createConnection(dbname = 'tests', username = 'root', password = '', options = {}) {
         if (this.isConnected()) {
-            return this.getConnection().authenticate()
+            return Promise.resolve(this.getConnection())
         }
 
         const connection = new Db.Sequelize(
@@ -60,6 +69,7 @@ class Db extends LRU {
             .catch((error) => {
                 config('dispatcher.onConnectionError', _.noop)(error, connection)
             })
+            .thenReturn(connection)
     }
 
     import(dirPath, isRecursion = false) {
@@ -77,17 +87,15 @@ class Db extends LRU {
                     .forEach((filePath) => {
                         const model = connection.import(filePath)
 
-                        this.set(model.name, model)
-                        this[model.name] = this.peek(model.name)
-
+                        this._tables[model.name] = model
                         return callback(null, model)
                     })
             }, (error, results) => {
                 _.forEach(results, (model) => {
                     if (!model) return
 
-                    if (this[model.name].options.hasOwnProperty('associate')) {
-                        this[model.name].options.associate(results)
+                    if (this._tables[model.name].options.hasOwnProperty('associate')) {
+                        this._tables[model.name].options.associate(results)
                     }
                 }, this)
 
@@ -113,14 +121,24 @@ class Db extends LRU {
 
     addSchema(name, defineFunc) {
         const connection = this.getConnection()
-
         const model = connection.import(
             name, defineFunc
         )
-        this.set(model.name, model)
-        this[model.name] = this.peek(model.name)
-
+        this._tables[model.name] = model
         return this
+    }
+
+    hasTable(tableName) {
+        return this
+            .createConnection(null)
+            .then((connection) => {
+                return connection.query(`SELECT IF("${tableName}" IN(SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA), true, false) AS isExist;`)
+            })
+            .then(rows => {
+                return Boolean(
+                    parseInt(_.get(rows, '0.0.isExist', 0))
+                )
+            })
     }
 }
 
