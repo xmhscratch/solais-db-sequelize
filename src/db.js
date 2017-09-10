@@ -20,7 +20,7 @@ class Db {
         }
     }
 
-    get Tables() {
+    get tables() {
         return this._tables || {}
     }
 

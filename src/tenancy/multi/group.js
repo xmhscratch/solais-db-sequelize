@@ -22,8 +22,13 @@ class Group extends DbTable {
             super.ensure(),
             (db) => {
                 const connection = db.getConnection()
-                this.getMemberSchema(connection).sync()
-                return
+
+                return db.addSchema('_members', () => {
+                    const MemberSchema = this.getMemberSchema(connection)
+
+                    MemberSchema.sync()
+                    return MemberSchema
+                })
             }
         )
     }
@@ -31,16 +36,27 @@ class Group extends DbTable {
     getDb() {
         const { groupName } = this
 
-        return Db
+        if (this._db) {
+            return this._db
+        }
+
+        this._db = Db
             .connect(`${groupName}`)
             .load('./schema')
+
+        return this._db
     }
 
     getMemberSchema(connection) {
         const SchemaModel = connection.define('_members', {
-            title: Db.Sequelize.STRING,
-            description: Db.Sequelize.TEXT,
-            deadline: Db.Sequelize.DATE
+            id: {
+                type: Db.Sequelize.UUID,
+                defaultValue: Db.Sequelize.UUIDV4,
+                primaryKey: true
+            },
+            // db_user: '',
+            // db_pass: '',
+            // db_hostname: '',
         }, {
             timestamps: true,
             paranoid: true,
@@ -52,18 +68,22 @@ class Group extends DbTable {
         return SchemaModel
     }
 
-    getTables() {
-        
-    }
-
     createMember() {
         const { groupName } = this
-        return new Member(uuidv4(), groupName)
+
+        return this.getDb()
+            .then((db) => {
+                const Members = db.tables._members
+                return Members.create()
+            }).then((memberModel) => {
+                const tenantId = memberModel.get('id')
+                return new Member(tenantId, groupName)
+            })
     }
 
     removeMember(tenantId) {
         const { groupName } = this
-        
+
         return this.getMember()
             .then((member) => {
                 if (!member) return
