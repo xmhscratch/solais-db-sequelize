@@ -12,8 +12,12 @@ class Orm extends System.Module {
         return require('./db')
     }
 
+    static get SingleTenancy() {
+        return require('./single')
+    }
+
     static get MultiTenancy() {
-        return require('./tenancy/multi')
+        return require('./multi')
     }
 
     constructor() {

@@ -1,4 +1,4 @@
-const Db = require('../db')
+const Db = require('./db')
 
 class SingleTenancy {
     constructor(tenantName) {

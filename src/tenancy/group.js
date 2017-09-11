@@ -1,4 +1,4 @@
-const Db = require('../../db')
+const Db = require('../db')
 const DbTable = require('./db-table')
 const Member = require('./member')
 const uuidv4 = require('uuid/v4')
@@ -59,7 +59,7 @@ class Group extends DbTable {
             // db_hostname: '',
         }, {
             timestamps: true,
-            paranoid: true,
+            paranoid: false,
             underscored: true,
             freezeTableName: true,
             tableName: '_members'
@@ -73,9 +73,10 @@ class Group extends DbTable {
 
         return this.getDb()
             .then((db) => {
-                const Members = db.tables._members
-                return Members.create()
-            }).then((memberModel) => {
+                const { _members } = db.tables
+                return _members.create()
+            })
+            .then((memberModel) => {
                 const tenantId = memberModel.get('id')
                 return new Member(tenantId, groupName)
             })
@@ -84,11 +85,19 @@ class Group extends DbTable {
     removeMember(tenantId) {
         const { groupName } = this
 
-        return this.getMember()
-            .then((member) => {
-                if (!member) return
-                return member.drop()
-            })
+        return Promise.using(
+            this.getDb(),
+            this.getMember(tenantId),
+            (db, member) => {
+                const { _members } = db.tables
+                return _members.destroy({
+                    where: { id: tenantId }
+                }).then(() => {
+                    if (!member) return
+                    return member.drop()
+                })
+            }
+        )
     }
 
     getMember(tenantId) {
@@ -97,9 +106,7 @@ class Group extends DbTable {
 
         return this
             .getDb()
-            .then((db) => {
-                return db.hasTable(tableName)
-            })
+            .then((db) => db.hasTable(tableName))
             .then((isExist) => {
                 if (!isExist) {
                     return

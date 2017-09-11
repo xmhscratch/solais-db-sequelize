@@ -1,5 +1,3 @@
-const LRU = require('lru-cache')
-
 class Db {
 
     static get Sequelize() {

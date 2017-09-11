@@ -1,5 +1,5 @@
-const Db = require('../db')
-const Group = require('./multi/group')
+const Db = require('./db')
+const Group = require('./tenancy/group')
 const LRU = require('lru-cache')
 
 class MultiTenancy {
@@ -65,13 +65,13 @@ class MultiTenancy {
             throw new Error('Tenancy manager is not initialized!')
         }
 
-        return this
-            .getMember(tenantId)
+        return this.getGroup()
+            .then((group) => {
+                return group.removeMember(tenantId)
+            })
             .then((member) => {
                 if (!member) return
-
-                this._members.del(tenantId)
-                return member.drop()
+                return this._members.del(tenantId)
             })
     }
 
