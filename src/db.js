@@ -9,8 +9,11 @@ class Db {
             load: (dirPath, isRecursion) => {
                 const db = new Db()
 
-                return db.createConnection(dbname, username, password, options)
+                return db
+                    .createConnection(dbname, username, password, options)
                     .then((connection) => {
+                        db._connection
+                        console.log(connection)
                         return db.import(dirPath, isRecursion)
                     })
                     .thenReturn(db)
@@ -24,6 +27,7 @@ class Db {
 
     constructor() {
         this._tables = {}
+        this._connection = null
         return this
     }
 
@@ -72,7 +76,7 @@ class Db {
 
     import(dirPath, isRecursion = false) {
         const connection = this.getConnection()
-
+// console.log(this)
         return Promise.promisify((dirPath, done) => async.map(
             fs(dirPath).getItems(
                 false, !isRecursion ? { deep: 1 } : null

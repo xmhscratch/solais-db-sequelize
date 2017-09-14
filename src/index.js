@@ -20,12 +20,9 @@ class Orm extends System.Module {
         return require('./multi')
     }
 
-    constructor() {
-        super()
-    }
-
     initialize(done) {
-        return done()
+        done()
+        return this
     }
 }
 
