@@ -74,9 +74,9 @@ class Db {
             .thenReturn(connection)
     }
 
-    import(dirPath, isRecursion = false) {
+    import (dirPath, isRecursion = false) {
         const connection = this.getConnection()
-// console.log(this)
+
         return Promise.promisify((dirPath, done) => async.map(
             fs(dirPath).getItems(
                 false, !isRecursion ? { deep: 1 } : null
