@@ -17,15 +17,13 @@ class SingleTenancy {
 
         return new DbTable(tableName)
             .ensure()
-            .then((dbTable) => {
-                return dbTable.getDb()
-            })
+            .then((dbTable) => dbTable.getDb())
             .then((db) => {
-                this._tables = db.Tables
+                this._tables = db.tables
                 this._initialized = true
+
                 return this
             })
-            .thenReturn(this)
     }
 }
 
