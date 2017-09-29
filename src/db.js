@@ -13,7 +13,6 @@ class Db {
                     .createConnection(dbname, username, password, options)
                     .then((connection) => {
                         db._connection
-                        console.log(connection)
                         return db.import(dirPath, isRecursion)
                     })
                     .thenReturn(db)
