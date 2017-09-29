@@ -12,7 +12,7 @@ class Db {
                 return db
                     .createConnection(dbname, username, password, options)
                     .then((connection) => {
-                        db._connection
+                        db._connection = connection
                         return db.import(dirPath, isRecursion)
                     })
                     .thenReturn(db)
@@ -76,31 +76,29 @@ class Db {
     import (dirPath, isRecursion = false) {
         const connection = this.getConnection()
 
-        return Promise.promisify((dirPath, done) => async.map(
+        return Promise.promisify((dirPath, done) => async.reduce(
             fs(dirPath).getItems(
                 false, !isRecursion ? { deep: 1 } : null
-            ),
-            (filePaths, callback) => {
-                _.castArray(filePaths)
+            ), [],
+            (memo, filePaths, callback) => {
+                const items = _.castArray(filePaths)
                     .filter((filePath) => {
                         return filePath.indexOf('.') !== 0
                     })
-                    .forEach((filePath) => {
-                        const model = connection.import(filePath)
-
-                        this._tables[model.name] = model
-                        return callback(null, model)
-                    })
+                return callback(null, _.union(memo, items))
             }, (error, results) => {
-                _.forEach(results, (model) => {
+                _.forEach(results, (filePath) => {
+                    const model = connection.import(filePath)
+
                     if (!model) return
 
+                    this._tables[model.name] = model
                     if (this._tables[model.name].options.hasOwnProperty('associate')) {
                         this._tables[model.name].options.associate(results)
                     }
                 }, this)
 
-                return done()
+                return done(error, this._tables)
             }
         ))(dirPath)
     }
