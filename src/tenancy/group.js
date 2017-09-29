@@ -7,8 +7,8 @@ class Group extends DbTable {
 
     constructor(groupName) {
         super(groupName)
-        this.groupName = groupName
 
+        this.groupName = groupName
         return this
             .ensure()
             .thenReturn(this)
@@ -31,20 +31,6 @@ class Group extends DbTable {
                 })
             }
         )
-    }
-
-    getDb() {
-        const { groupName } = this
-
-        if (this._db) {
-            return this._db
-        }
-
-        this._db = Db
-            .connect(`${groupName}`)
-            .load('./schema')
-
-        return this._db
     }
 
     getMemberSchema(connection) {
