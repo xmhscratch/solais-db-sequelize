@@ -17,7 +17,7 @@ class DbTable {
             (connection) => {
                 return connection.query(`CREATE DATABASE IF NOT EXISTS \`${tableName}\` DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;`)
             }
-        )
+        ).thenReturn(this)
     }
 
     drop() {
@@ -28,7 +28,21 @@ class DbTable {
             (connection) => {
                 return connection.query(`DROP DATABASE IF EXISTS \`${tableName}\`;`)
             }
-        )
+        ).thenReturn(this)
+    }
+
+    getDb() {
+        const { tableName } = this
+
+        if (this._db) {
+            return this._db
+        }
+
+        this._db = Db
+            .connect(`${tableName}`)
+            .load('./schema')
+
+        return this._db
     }
 }
 
