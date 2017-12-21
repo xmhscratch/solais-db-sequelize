@@ -4,7 +4,7 @@ class Db {
         return require('sequelize')
     }
 
-    static connect(dbname = 'tests', username = 'root', password = '', options = {}) {
+    static connect(dbname = '', username = '', password = '', options = {}) {
         return {
             load: (dirPath, isRecursion) => {
                 const db = new Db()
@@ -35,31 +35,31 @@ class Db {
             return Promise.resolve(this.getConnection())
         }
 
-        const connection = new Db.Sequelize(
-            _.isEmpty(dbname) ? config('database.name') : dbname,
-            _.isEmpty(username) ? config('database.username', 'root') : username,
-            _.isEmpty(password) ? config('database.password', '') : password,
-            // sequelize options
-            _.defaultsDeep(options, {
-                dialect: config('database.dialect', 'mysql'),
-                // dialectModulePath: 'mysql',
-                host: config('database.host', '127.0.0.1'),
-                port: config('database.port', 3306),
-                pool: {
-                    max: config('database.pool.max', 5),
-                    min: config('database.pool.min', 0),
-                    idle: config('database.pool.idle', 10000)
-                },
-                dialectOptions: {
-                    charset: config('database.charset', 'utf8mb4')
-                },
-                define: {
-                    charset: config('database.charset', 'utf8mb4'),
-                    collate: config('database.collate', 'utf8mb4_unicode_ci')
-                },
-                logging: false
-            })
-        )
+        // sequelize options
+        _.defaultsDeep(options, {
+            dialect: config('database.dialect', 'mysql'),
+            database: _.isEmpty(dbname) ? config('database.name') : dbname,
+            username: _.isEmpty(username) ? config('database.username') : username,
+            password: _.isEmpty(password) ? config('database.password') : password,
+            // dialectModulePath: 'mysql',
+            host: config('database.host', '127.0.0.1'),
+            port: config('database.port', 3306),
+            pool: {
+                max: config('database.pool.max', 5),
+                min: config('database.pool.min', 0),
+                idle: config('database.pool.idle', 10000)
+            },
+            dialectOptions: {
+                charset: config('database.charset', 'utf8mb4')
+            },
+            define: {
+                charset: config('database.charset', 'utf8mb4'),
+                collate: config('database.collate', 'utf8mb4_unicode_ci')
+            },
+            logging: false
+        })
+
+        const connection = new Db.Sequelize(options)
 
         return connection
             .authenticate()
@@ -69,6 +69,7 @@ class Db {
             })
             .catch((error) => {
                 config('dispatcher.onConnectionError', _.noop)(error, connection)
+                throw error
             })
             .thenReturn(connection)
     }
