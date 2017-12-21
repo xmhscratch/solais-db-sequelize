@@ -30,15 +30,15 @@ class Db {
         return this
     }
 
-    createConnection(dbname = 'tests', username = 'root', password = '', options = {}) {
+    createConnection(dbname = '', username = '', password = '', options = {}) {
         if (this.isConnected()) {
             return Promise.resolve(this.getConnection())
         }
 
         const connection = new Db.Sequelize(
-            _.isUndefined(dbname) ? config('database.name') : dbname,
-            username || config('database.username', 'root'),
-            password || config('database.password', ''),
+            _.isEmpty(dbname) ? config('database.name') : dbname,
+            _.isEmpty(username) ? config('database.username', 'root') : username,
+            _.isEmpty(password) ? config('database.password', '') : password,
             // sequelize options
             _.defaultsDeep(options, {
                 dialect: config('database.dialect', 'mysql'),
